@@ -9,15 +9,7 @@ import RFB from '@novnc/novnc/lib/rfb';
 import { VncActions } from './VncActions';
 import { constants } from '../common/constants';
 
-import { createUseStyles } from 'react-jss';
-
 const { CONNECTED, CONNECTING, DISCONNECTED } = constants;
-
-const useStyles = createUseStyles({
-  consoleVnc: {
-    gridArea: 'main'
-  }
-});
 
 export interface VncConsoleProps extends React.HTMLProps<HTMLDivElement> {
   /** Children nodes */
@@ -91,7 +83,6 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
   vncLogging = 'warn',
   consoleContainerId,
   additionalButtons = [] as React.ReactNode[],
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
   onDisconnected = () => {},
   onInitFailed,
   onSecurityFailure,
@@ -103,7 +94,7 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
   textCtrlAltDel
 }) => {
   const rfb = useRef<any>(null);
-  const styles = useStyles();
+  const rfbDisconnectedRef = useRef(false);
 
   const novncElem = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState(CONNECTING);
@@ -114,6 +105,7 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
 
   const _onDisconnected = useCallback(
     (e: any) => {
+      rfbDisconnectedRef.current = true;
       setStatus(DISCONNECTED);
       onDisconnected(e);
     },
@@ -151,6 +143,10 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
   }, [rfb, _onDisconnected, _onSecurityFailure]);
 
   const connect = useCallback(() => {
+    if (!novncElem.current) {
+      return;
+    }
+    rfbDisconnectedRef.current = false;
     const protocol = encrypt ? 'wss' : 'ws';
     const url = `${protocol}://${host}:${port}/${path}`;
 
@@ -185,14 +181,18 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
 
   useEffect(() => {
     initLogging(vncLogging);
-    try {
-      connect();
-    } catch (e) {
-      onInitFailed && onInitFailed(e);
-      rfb.current = undefined;
-    }
+    // Defer RFB creation so the container is laid out and has dimensions (avoids noVNC "dimensions" undefined)
+    const rafId = requestAnimationFrame(() => {
+      try {
+        connect();
+      } catch (e) {
+        onInitFailed && onInitFailed(e);
+        rfb.current = undefined;
+      }
+    });
 
     return () => {
+      cancelAnimationFrame(rafId);
       disconnect();
       removeEventListeners();
       rfb.current = undefined;
@@ -200,7 +200,7 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
   }, [connect, onInitFailed, removeEventListeners, vncLogging]);
 
   const disconnect = () => {
-    if (!rfb.current) {
+    if (!rfb.current || rfbDisconnectedRef.current) {
       return;
     }
     rfb.current.disconnect();
@@ -240,7 +240,7 @@ export const VncConsole: React.FunctionComponent<VncConsoleProps> = ({
   return (
     <>
       {rightContent}
-      <div className={styles.consoleVnc}>
+      <div className="console-vnc" style={{ gridArea: 'main' }}>
         {children}
         <Fragment>
           <div>

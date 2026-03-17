@@ -1,9 +1,10 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
 
 exports[`Render SerialConsoleActions 1`] = `
 <DocumentFragment>
   <div
-    class="consoleActionsSerial-0-2-1"
+    class="console-actions-serial"
+    style="grid-area: actions-extra; display: flex; justify-content: flex-end; gap: var(--pf-t--global--spacer--sm);"
   >
     <button
       class="pf-v6-c-button pf-m-secondary"
@@ -38,7 +39,8 @@ exports[`Render SerialConsoleActions 1`] = `
 exports[`Render SerialConsoleActions with custom texts 1`] = `
 <DocumentFragment>
   <div
-    class="consoleActionsSerial-0-2-1"
+    class="console-actions-serial"
+    style="grid-area: actions-extra; display: flex; justify-content: flex-end; gap: var(--pf-t--global--spacer--sm);"
   >
     <button
       class="pf-v6-c-button pf-m-secondary"
